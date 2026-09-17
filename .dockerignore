@@ -1,0 +1,11 @@
+.venv/
+__pycache__/
+*.pyc
+.git/
+.vscode/
+data/
+tests/
+scripts/
+predict_local.py
+train_model.py
+models/test_predictions.csv

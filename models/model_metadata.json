@@ -1,0 +1,26 @@
+{
+  "dataset": "data\\starter_synergy_data.csv",
+  "rows_in_dataset": 300,
+  "training_rows": 240,
+  "test_rows": 60,
+  "target_column": "synergy_score",
+  "categorical_features": [
+    "drug_a",
+    "drug_b",
+    "cell_line"
+  ],
+  "numeric_features": [
+    "drug_a_molecular_weight",
+    "drug_b_molecular_weight",
+    "drug_a_logp",
+    "drug_b_logp",
+    "dose_a_um",
+    "dose_b_um",
+    "cell_line_growth_rate"
+  ],
+  "metrics": {
+    "mse": 3.922,
+    "rmse": 1.98,
+    "r2": 0.748
+  }
+}

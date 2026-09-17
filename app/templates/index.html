@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Drug Synergy V1 Prototype</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <main class="card">
+    <p class="eyebrow">Machine-learning learning project</p>
+    <h1>Drug Synergy Predictor</h1>
+    <p class="intro">
+      Select a simulated drug combination and cell line to receive a V1 prototype prediction.
+    </p>
+
+    <form id="prediction-form">
+      <div class="field-grid">
+        <label>
+          Drug A
+          <select id="drug-a" required>
+            <option value="DrugA">DrugA</option>
+            <option value="DrugB">DrugB</option>
+            <option value="DrugC">DrugC</option>
+            <option value="DrugD">DrugD</option>
+            <option value="DrugE">DrugE</option>
+          </select>
+        </label>
+
+        <label>
+          Drug B
+          <select id="drug-b" required>
+            <option value="DrugB">DrugB</option>
+            <option value="DrugA">DrugA</option>
+            <option value="DrugC">DrugC</option>
+            <option value="DrugD">DrugD</option>
+            <option value="DrugE">DrugE</option>
+          </select>
+        </label>
+
+        <label>
+          Cell line
+          <select id="cell-line" required>
+            <option value="A549">A549</option>
+            <option value="MCF7">MCF7</option>
+            <option value="HCT116">HCT116</option>
+            <option value="PC3">PC3</option>
+          </select>
+        </label>
+
+        <label>
+          Drug A dose (µM)
+          <input id="dose-a" type="number" min="0.0001" step="any" value="0.5" required>
+        </label>
+
+        <label>
+          Drug B dose (µM)
+          <input id="dose-b" type="number" min="0.0001" step="any" value="0.5" required>
+        </label>
+      </div>
+
+      <button type="submit">Predict synergy score</button>
+    </form>
+
+    <section id="result" class="result hidden" aria-live="polite"></section>
+
+    <p class="notice">
+      Prototype only: this model uses synthetic training data and must not be used
+      for clinical, scientific, or treatment decisions.
+    </p>
+  </main>
+
+  <script>
+    const drugFeatures = {
+      DrugA: { molecular_weight: 350, logp: 1.2 },
+      DrugB: { molecular_weight: 420, logp: 2.1 },
+      DrugC: { molecular_weight: 280, logp: 0.8 },
+      DrugD: { molecular_weight: 510, logp: 3.0 },
+      DrugE: { molecular_weight: 390, logp: 1.7 }
+    };
+
+    const cellLineGrowthRates = {
+      A549: 0.82,
+      MCF7: 0.64,
+      HCT116: 0.91,
+      PC3: 0.73
+    };
+
+    const form = document.getElementById("prediction-form");
+    const result = document.getElementById("result");
+
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+
+      // A drug combination is treated consistently regardless of selection order.
+      const [drugA, drugB] = [
+        document.getElementById("drug-a").value,
+        document.getElementById("drug-b").value
+      ].sort();
+
+      if (drugA === drugB) {
+        result.textContent = "Please select two different drugs.";
+        result.className = "result error";
+        return;
+      }
+
+      const cellLine = document.getElementById("cell-line").value;
+
+      const payload = {
+        drug_a: drugA,
+        drug_b: drugB,
+        cell_line: cellLine,
+        drug_a_molecular_weight: drugFeatures[drugA].molecular_weight,
+        drug_b_molecular_weight: drugFeatures[drugB].molecular_weight,
+        drug_a_logp: drugFeatures[drugA].logp,
+        drug_b_logp: drugFeatures[drugB].logp,
+        dose_a_um: Number(document.getElementById("dose-a").value),
+        dose_b_um: Number(document.getElementById("dose-b").value),
+        cell_line_growth_rate: cellLineGrowthRates[cellLine]
+      };
+
+      result.textContent = "Calculating prediction...";
+      result.className = "result";
+
+      try {
+        const response = await fetch("/predict", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.detail || "Prediction request failed.");
+        }
+
+        result.innerHTML = `
+          <strong>Predicted synergy score: ${data.predicted_synergy_score}</strong>
+          <span>${data.prototype_notice}</span>
+        `;
+        result.className = "result success";
+      } catch (error) {
+        result.textContent = `Error: ${error.message}`;
+        result.className = "result error";
+      }
+    });
+  </script>
+</body>
+</html>
