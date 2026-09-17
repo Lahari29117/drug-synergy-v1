@@ -18,5 +18,5 @@ COPY models ./models
 
 EXPOSE 8000
 
-# --reload is intentionally omitted: it is useful locally, not in deployment.
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Railway injects PORT in production; 8000 keeps local Docker testing simple.
+CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
